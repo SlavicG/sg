@@ -49,7 +49,7 @@ var keywords = map[string]TokenType{
 	"true":   TRUE,
 	"factos": TRUE,
 	"false":  FALSE,
-	"scuza":  FALSE,
+	"unfactos":  FALSE,
 	"if":     IF,
 	"else":   ELSE,
 	"return": RETURN,
