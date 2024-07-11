@@ -62,7 +62,30 @@ func New(lexer *lexer.Lexer) *Parser {
 	parser.prefixParseFns = make(map[token.TokenType]prefixParseFn)
 	parser.infixParseFns = make(map[token.TokenType]infixParseFn)
 
-	//TODO: REGISTER FUNCTIONS FOR RESPECTIVE TOKENS
+	//Registering the respective functions to tokens
+	parser.registerPrefix(token.IDENT, parser.parseIdentifier)
+	parser.registerPrefix(token.INT, parser.parseIntegerLiteral)
+	parser.registerPrefix(token.EXC, parser.parsePrefixExpression)
+	parser.registerPrefix(token.MINUS, parser.parsePrefixExpression)
+	parser.registerPrefix(token.TRUE, parser.parseBoolean)
+	parser.registerPrefix(token.FALSE, parser.parseBoolean)
+	parser.registerPrefix(token.LP, parser.parseGroupedExpressions)
+	parser.registerPrefix(token.IF, parser.parseIfExpression)
+	parser.registerPrefix(token.FUNCTION, parser.parseFunctionLiteral)
+
+	parser.registerInfix(token.PLUS, parser.parseInfixExpression)
+	parser.registerInfix(token.MINUS, parser.parseInfixExpression)
+	parser.registerInfix(token.SLASH, parser.parseInfixExpression)
+	parser.registerInfix(token.STAR, parser.parseInfixExpression)
+	parser.registerInfix(token.EQ, parser.parseInfixExpression)
+	parser.registerInfix(token.NOT_EQ, parser.parseInfixExpression)
+	parser.registerInfix(token.LT, parser.parseInfixExpression)
+	parser.registerInfix(token.GT, parser.parseInfixExpression)
+	parser.registerInfix(token.LP, parser.parseCallExpression)
+
+	parser.nextToken()
+	parser.nextToken()
+
 	return parser
 }
 
@@ -126,6 +149,10 @@ func (parser *Parser) parseIntegerLiteral() ast.Expression {
 
 	return lit
 }
+func (parser *Parser) noPrefixParseFnError(t token.TokenType) {
+	msg := fmt.Sprintf("no prefix parse function for %s found", t)
+	parser.errors = append(parser.errors, msg)
+}
 
 func (parser *Parser) parseBoolean() ast.Expression {
 	return &ast.Boolean{Token: parser.curToken, Value: parser.CurTokenIsType(token.TRUE)}
@@ -144,11 +171,12 @@ func (parser *Parser) ParseProgram() *ast.Program {
 	return program
 }
 func (parser *Parser) parseStatement() ast.Statement {
-	if parser.CurTokenIsType(token.LET) {
+	switch parser.curToken.Type {
+	case token.LET:
 		return parser.parseLetStatement()
-	} else if parser.CurTokenIsType(token.RETURN) {
+	case token.RETURN:
 		return parser.parseReturnStatement()
-	} else {
+	default:
 		return parser.parseExpressionStatement()
 	}
 }
@@ -165,9 +193,11 @@ func (parser *Parser) parseLetStatement() ast.Statement {
 	}
 	parser.nextToken()
 	statement.Val = parser.parseExpression(LOWEST)
+
 	if parser.PeekTokenIsType(token.SEMICOL) {
 		parser.nextToken()
 	}
+
 	return statement
 }
 
@@ -194,13 +224,14 @@ func (parser *Parser) parseExpressionStatement() ast.Statement {
 func (parser *Parser) parseExpression(precedence int) ast.Expression {
 	prefix := parser.prefixParseFns[parser.curToken.Type]
 	if prefix == nil {
-		//TODO: NoPrefixParseError
+		parser.noPrefixParseFnError(parser.curToken.Type)
+
 		return nil
 	}
 	leftExpr := prefix()
 
 	for !parser.PeekTokenIsType(token.SEMICOL) && precedence < parser.peekPrecedence() {
-		infix := parser.infixParseFns[parser.curToken.Type]
+		infix := parser.infixParseFns[parser.peekToken.Type]
 		if infix == nil {
 			return leftExpr
 		}
@@ -241,4 +272,113 @@ func (parser *Parser) parseGroupedExpressions() ast.Expression {
 	return expression
 }
 
-//TODO: FUNCTIONS AND IF EXPRESSIONS AND POLISHING ABOVE STUFF
+func (parser *Parser) parseIfExpression() ast.Expression {
+	expression := &ast.IfExpression{Token: parser.curToken}
+	if !parser.ExpectPeek(token.LP) {
+		return nil
+	}
+	parser.nextToken()
+	expression.Cond = parser.parseExpression(LOWEST)
+	if !parser.ExpectPeek(token.RP) {
+		return nil
+	}
+	if !parser.ExpectPeek(token.LB) {
+		return nil
+	}
+	expression.Cons = parser.parseBlockStatement()
+	if parser.PeekTokenIsType(token.ELSE) {
+		parser.nextToken()
+		if !parser.ExpectPeek(token.LB) {
+			return nil
+		}
+		expression.Alt = parser.parseBlockStatement()
+	}
+	return expression
+}
+
+func (parser *Parser) parseBlockStatement() *ast.BlockStatement {
+	block := &ast.BlockStatement{Token: parser.curToken}
+	block.Statements = []ast.Statement{}
+
+	parser.nextToken()
+
+	for !parser.CurTokenIsType(token.RB) && !parser.CurTokenIsType(token.EOF) {
+		statement := parser.parseStatement()
+		if statement != nil {
+			block.Statements = append(block.Statements, statement)
+		}
+		parser.nextToken()
+	}
+	return block
+}
+
+func (parser *Parser) parseFunctionLiteral() ast.Expression {
+	literal := &ast.FunctionLiteral{Token: parser.curToken}
+
+	if !parser.ExpectPeek(token.LP) {
+		return nil
+	}
+	literal.Parameters = parser.parseFunctionParameters()
+
+	if !parser.ExpectPeek(token.LB) {
+		return nil
+	}
+	literal.Body = parser.parseBlockStatement()
+	return literal
+}
+
+func (parser *Parser) parseFunctionParameters() []*ast.Identifier {
+	identifiers := []*ast.Identifier{}
+
+	if parser.PeekTokenIsType(token.RP) {
+		parser.nextToken()
+		return identifiers
+	}
+	parser.nextToken()
+
+	ident := &ast.Identifier{Token: parser.curToken, Value: parser.curToken.Literal}
+	identifiers = append(identifiers, ident)
+
+	for parser.PeekTokenIsType(token.COMMA) {
+		parser.nextToken()
+		parser.nextToken()
+		ident := &ast.Identifier{Token: parser.curToken, Value: parser.curToken.Literal}
+		identifiers = append(identifiers, ident)
+	}
+	if !parser.ExpectPeek(token.RP) {
+		return nil
+	}
+	return identifiers
+}
+
+func (parser *Parser) parseCallExpression(function ast.Expression) ast.Expression {
+	expression := &ast.CallExpression{Token: parser.curToken, Function: function}
+	expression.Arguments = parser.parseCallArguments()
+	return expression
+}
+
+func (parser *Parser) parseCallArguments() []ast.Expression {
+	args := []ast.Expression{}
+
+	if parser.PeekTokenIsType(token.RP) {
+		parser.nextToken()
+		return args
+	}
+	parser.nextToken()
+	arg := parser.parseExpression(LOWEST)
+	args = append(args, arg)
+
+	for parser.PeekTokenIsType(token.COMMA) {
+		parser.nextToken()
+		parser.nextToken()
+		arg := parser.parseExpression(LOWEST)
+		args = append(args, arg)
+	}
+
+	if !parser.ExpectPeek(token.RP) {
+		return nil
+	}
+	return args
+}
+
+//DEBUG CUZ FUNCTIONS ARE NOT WORKING!!!!!!
