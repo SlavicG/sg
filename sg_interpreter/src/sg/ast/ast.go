@@ -49,6 +49,26 @@ func (program *Program) String() string {
 	return output.String()
 }
 
+type SetStatement struct {
+	Token token.Token
+	Id    *Identifier
+	Val   Expression
+}
+
+func (setStatement *SetStatement) statementNode()       {}
+func (setStatement *SetStatement) TokenLiteral() string { return setStatement.Token.Literal }
+func (SetStatement *SetStatement) String() string {
+	var output bytes.Buffer
+	output.WriteString(SetStatement.TokenLiteral() + " ")
+	output.WriteString(SetStatement.Id.String())
+	output.WriteString(" = ")
+	if SetStatement.Val != nil {
+		output.WriteString(SetStatement.Val.String())
+	}
+	output.WriteString(";")
+	return output.String()
+}
+
 type LetStatement struct {
 	Token token.Token
 	Id    *Identifier

@@ -171,6 +171,9 @@ func (parser *Parser) ParseProgram() *ast.Program {
 	return program
 }
 func (parser *Parser) parseStatement() ast.Statement {
+	if parser.curToken.Type == token.IDENT && parser.peekToken.Type == token.SET {
+		return parser.parseSetStatement()
+	}
 	switch parser.curToken.Type {
 	case token.LET:
 		return parser.parseLetStatement()
@@ -180,7 +183,22 @@ func (parser *Parser) parseStatement() ast.Statement {
 		return parser.parseExpressionStatement()
 	}
 }
+func (parser *Parser) parseSetStatement() ast.Statement {
+	statement := &ast.SetStatement{Token: parser.curToken}
+	statement.Id = &ast.Identifier{Token: parser.curToken, Value: parser.curToken.Literal}
 
+	if !parser.ExpectPeek(token.SET) {
+		return nil
+	}
+	parser.nextToken()
+	statement.Val = parser.parseExpression(LOWEST)
+
+	if parser.PeekTokenIsType(token.SEMICOL) {
+		parser.nextToken()
+	}
+
+	return statement
+}
 func (parser *Parser) parseLetStatement() ast.Statement {
 	statement := &ast.LetStatement{Token: parser.curToken}
 	if !parser.ExpectPeek(token.IDENT) {
@@ -380,5 +398,3 @@ func (parser *Parser) parseCallArguments() []ast.Expression {
 	}
 	return args
 }
-
-//DEBUG CUZ FUNCTIONS ARE NOT WORKING!!!!!!
