@@ -16,5 +16,6 @@ func main() {
 	defer file.Close()
 
 	// Start the REPL, reading from the file and writing to stdout
-	repl.Start(file, os.Stdout)
+	//file or os.Stdin
+	repl.Start(os.Stdin, os.Stdout)
 }

@@ -255,3 +255,69 @@ func (callExpression *CallExpression) String() string {
 	out.WriteString(")")
 	return out.String()
 }
+
+type StringLiteral struct {
+	Token token.Token
+	Value string
+}
+
+func (stringLiteral *StringLiteral) expressionNode()      {}
+func (stringLiteral *StringLiteral) TokenLiteral() string { return stringLiteral.Token.Literal }
+func (stringLiteral *StringLiteral) String() string       { return stringLiteral.Token.Literal }
+
+type ArrayLiteral struct {
+	Token    token.Token
+	Elements []Expression
+}
+
+func (arrayLiteral *ArrayLiteral) expressionNode()      {}
+func (arrayLiteral *ArrayLiteral) TokenLiteral() string { return arrayLiteral.Token.Literal }
+func (arrayLiteral *ArrayLiteral) String() string {
+	var output bytes.Buffer
+	elements := []string{}
+	for _, e := range arrayLiteral.Elements {
+		elements = append(elements, e.String())
+	}
+	output.WriteString("[")
+	output.WriteString(strings.Join(elements, ", "))
+	output.WriteString("]")
+	return output.String()
+}
+
+type IndexExpression struct {
+	Token token.Token
+	Left  Expression
+	Index Expression
+}
+
+func (indexExpression *IndexExpression) expressionNode()      {}
+func (indexExpression *IndexExpression) TokenLiteral() string { return indexExpression.Token.Literal }
+func (indexExpression *IndexExpression) String() string {
+	var out bytes.Buffer
+	out.WriteString("(")
+	out.WriteString(indexExpression.Left.String())
+	out.WriteString("[")
+	out.WriteString(indexExpression.Index.String())
+	out.WriteString("])")
+	return out.String()
+}
+
+type MapLiteral struct {
+	Token token.Token
+	Pairs map[Expression]Expression
+}
+
+func (mapLiteral *MapLiteral) expressionNode()      {}
+func (mapLiteral *MapLiteral) TokenLiteral() string { return mapLiteral.Token.Literal }
+func (mapLiteral *MapLiteral) String() string {
+	var out bytes.Buffer
+	pairs := []string{}
+	for key, value := range mapLiteral.Pairs {
+		pairs = append(pairs, key.String()+":"+value.String())
+	}
+	out.WriteString("{")
+	out.WriteString(strings.Join(pairs, ", "))
+	out.WriteString("}")
+
+	return out.String()
+}

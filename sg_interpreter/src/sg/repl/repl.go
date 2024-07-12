@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"os"
 	"sg_interpreter/src/sg/Item"
 	"sg_interpreter/src/sg/evaluator"
 	"sg_interpreter/src/sg/lexer"
@@ -16,6 +17,10 @@ func Start(in io.Reader, out io.Writer) {
 	scanner := bufio.NewScanner(in)
 	env := Item.NewScope()
 	fmt.Printf(PROMPT)
+
+	if in == os.Stdin {
+
+	}
 	for {
 		scanned := scanner.Scan()
 		if !scanned {
@@ -46,7 +51,6 @@ VLADISLAV FOUND BUG
 
 func printParserErrors(out io.Writer, errors []string) {
 	io.WriteString(out, ERROR_MESSAGE)
-	io.WriteString(out, "Woops! We ran into some monkey business here!\n")
 	io.WriteString(out, " parser errors:\n")
 	for _, msg := range errors {
 		io.WriteString(out, "\t"+msg+"\n")

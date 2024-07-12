@@ -4,8 +4,10 @@ type TokenType string
 
 const (
 	// Identifiers + literals
-	INT   = "INT"
-	IDENT = "IDENT"
+	INT    = "INT"
+	IDENT  = "IDENT"
+	STRING = "STRING"
+
 	// Operators
 	SET    = "="
 	PLUS   = "+"
@@ -17,13 +19,18 @@ const (
 	GT     = ">"
 	EQ     = "=="
 	NOT_EQ = "!="
+
 	// Delimiters
 	COMMA   = ","
 	SEMICOL = ";"
+	COL     = ":"
 	LP      = "("
 	RP      = ")"
 	LB      = "{"
 	RB      = "}"
+	LBP     = "["
+	RBP     = "]"
+
 	//Keywords
 	FUNCTION = "FUNCTION"
 	LET      = "LET"
@@ -44,16 +51,16 @@ type Token struct {
 }
 
 var keywords = map[string]TokenType{
-	"fun":    FUNCTION,
-	"let":    LET,
-	"true":   TRUE,
-	"factos": TRUE,
-	"false":  FALSE,
-	"unfactos":  FALSE,
-	"if":     IF,
-	"else":   ELSE,
-	"return": RETURN,
-	"ret":    RETURN,
+	"fun":      FUNCTION,
+	"let":      LET,
+	"true":     TRUE,
+	"factos":   TRUE,
+	"false":    FALSE,
+	"unfactos": FALSE,
+	"if":       IF,
+	"else":     ELSE,
+	"return":   RETURN,
+	"ret":      RETURN,
 }
 
 func FindIdent(ident string) TokenType {
