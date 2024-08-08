@@ -15,9 +15,9 @@ var (
 func Eval(node ast.Node, scope *Item.Scope) Item.Item {
 	switch node := node.(type) {
 	case *ast.Program:
-		return EvalProgram(node, scope)
+		return evalProgram(node, scope)
 	case *ast.BlockStatement:
-		return EvalBlockStatement(node, scope)
+		return evalBlockStatement(node, scope)
 	case *ast.ExpressionStatement:
 		return Eval(node.Expr, scope)
 	case *ast.ReturnStatement:
@@ -48,6 +48,8 @@ func Eval(node ast.Node, scope *Item.Scope) Item.Item {
 		scope.Set(node.Id.Value, val)
 	case *ast.IntegerLiteral:
 		return &Item.Integer{Value: node.Value}
+	case *ast.StringLiteral:
+		return &Item.String{Value: node.Value}
 	case *ast.Boolean:
 		return boolToBoolean(node.Value)
 	case *ast.PrefixExpression:
@@ -55,7 +57,7 @@ func Eval(node ast.Node, scope *Item.Scope) Item.Item {
 		if isError(right) {
 			return right
 		}
-		return EvalPrefixExpression(node.Operator, right)
+		return evalPrefixExpression(node.Operator, right)
 	case *ast.InfixExpression:
 		left := Eval(node.Left, scope)
 		if isError(left) {
@@ -65,11 +67,11 @@ func Eval(node ast.Node, scope *Item.Scope) Item.Item {
 		if isError(right) {
 			return right
 		}
-		return EvalInfixExpression(left, node.Operator, right)
+		return evalInfixExpression(left, node.Operator, right)
 	case *ast.IfExpression:
-		return EvalIfExpression(node, scope)
+		return evalIfExpression(node, scope)
 	case *ast.Identifier:
-		return EvalIdentifier(node, scope)
+		return evalIdentifier(node, scope)
 	case *ast.FunctionLiteral:
 		params := node.Parameters
 		body := node.Body
@@ -79,16 +81,37 @@ func Eval(node ast.Node, scope *Item.Scope) Item.Item {
 		if isError(function) {
 			return function
 		}
-		args := EvalExpression(node.Arguments, scope)
+		args := evalExpression(node.Arguments, scope)
 		if len(args) == 1 && isError(args[0]) {
 			return args[0]
 		}
-		return ApplyFunction(function, args)
+		return applyFunction(function, args)
+	case *ast.ArrayLiteral:
+		elements := evalExpression(node.Elements, scope)
+		if len(elements) == 1 && isError(elements[0]) {
+			return elements[0]
+		}
+		return &Item.Array{Elements: elements}
+
+	case *ast.IndexExpression:
+		left := Eval(node.Left, scope)
+		if isError(left) {
+			return left
+		}
+		index := Eval(node.Index, scope)
+		if isError(index) {
+			return index
+		}
+		return evalIndexExpression(left, index)
+
+	case *ast.MapLiteral:
+		return evalMapLiteral(node, scope)
+
 	}
 	return nil
 }
 
-func EvalProgram(program *ast.Program, scope *Item.Scope) Item.Item {
+func evalProgram(program *ast.Program, scope *Item.Scope) Item.Item {
 	var res Item.Item
 	for _, statement := range program.Statements {
 		res = Eval(statement, scope)
@@ -102,7 +125,7 @@ func EvalProgram(program *ast.Program, scope *Item.Scope) Item.Item {
 	return res
 }
 
-func EvalBlockStatement(block *ast.BlockStatement, scope *Item.Scope) Item.Item {
+func evalBlockStatement(block *ast.BlockStatement, scope *Item.Scope) Item.Item {
 	var res Item.Item
 	for _, statement := range block.Statements {
 		res = Eval(statement, scope)
@@ -115,21 +138,23 @@ func EvalBlockStatement(block *ast.BlockStatement, scope *Item.Scope) Item.Item 
 	return res
 }
 
-func EvalPrefixExpression(operator string, expression Item.Item) Item.Item {
+func evalPrefixExpression(operator string, expression Item.Item) Item.Item {
 	switch operator {
 	case "!":
-		return EvalEXC(expression)
+		return evalEXC(expression)
 	case "-":
-		return EvalMINUS(expression)
+		return evalMINUS(expression)
 	default:
 		return newError("unknown operator: %s%s", operator, expression.Type())
 	}
 }
 
-func EvalInfixExpression(left Item.Item, op string, right Item.Item) Item.Item {
+func evalInfixExpression(left Item.Item, op string, right Item.Item) Item.Item {
 	switch {
 	case left.Type() == Item.INTEGER_ITEM && right.Type() == Item.INTEGER_ITEM:
-		return EvalIntegerInfixExpr(left, op, right)
+		return evalIntegerInfixExpr(left, op, right)
+	case left.Type() == Item.STRING_ITEM && right.Type() == Item.STRING_ITEM:
+		return evalStringInfixExpression(op, left, right)
 	case op == "==":
 		return boolToBoolean(left == right)
 	case op == "!=":
@@ -143,7 +168,7 @@ func EvalInfixExpression(left Item.Item, op string, right Item.Item) Item.Item {
 	}
 }
 
-func EvalEXC(expression Item.Item) Item.Item {
+func evalEXC(expression Item.Item) Item.Item {
 	switch expression {
 	case TRUE:
 		return FALSE
@@ -156,7 +181,7 @@ func EvalEXC(expression Item.Item) Item.Item {
 	}
 }
 
-func EvalMINUS(expression Item.Item) Item.Item {
+func evalMINUS(expression Item.Item) Item.Item {
 	if expression.Type() != Item.INTEGER_ITEM {
 		return newError("unknown operator: -%s", expression.Type())
 	}
@@ -165,7 +190,7 @@ func EvalMINUS(expression Item.Item) Item.Item {
 	return &Item.Integer{Value: -val}
 }
 
-func EvalIntegerInfixExpr(left Item.Item, op string, right Item.Item) Item.Item {
+func evalIntegerInfixExpr(left Item.Item, op string, right Item.Item) Item.Item {
 	leftVal := left.(*Item.Integer).Value
 	rightVal := right.(*Item.Integer).Value
 	switch op {
@@ -188,7 +213,19 @@ func EvalIntegerInfixExpr(left Item.Item, op string, right Item.Item) Item.Item 
 	}
 	return newError("unknown operator: %s %s %s", left.Type(), op, right.Type())
 }
+func evalStringInfixExpression(
+	operator string,
+	left, right Item.Item,
+) Item.Item {
+	if operator != "+" {
+		return newError("unknown operator: %s %s %s",
+			left.Type(), operator, right.Type())
+	}
 
+	leftVal := left.(*Item.String).Value
+	rightVal := right.(*Item.String).Value
+	return &Item.String{Value: leftVal + rightVal}
+}
 func boolToBoolean(b bool) *Item.Boolean {
 	if b {
 		return TRUE
@@ -196,7 +233,7 @@ func boolToBoolean(b bool) *Item.Boolean {
 	return FALSE
 }
 
-func TrueLike(item Item.Item) bool {
+func trueLike(item Item.Item) bool {
 	switch item {
 	case NULL:
 		return false
@@ -208,12 +245,12 @@ func TrueLike(item Item.Item) bool {
 		return true
 	}
 }
-func EvalIfExpression(is *ast.IfExpression, scope *Item.Scope) Item.Item {
+func evalIfExpression(is *ast.IfExpression, scope *Item.Scope) Item.Item {
 	cond := Eval(is.Cond, scope)
 	if isError(cond) {
 		return cond
 	}
-	if TrueLike(cond) {
+	if trueLike(cond) {
 		return Eval(is.Cons, scope)
 	} else if is.Alt != nil {
 		return Eval(is.Alt, scope)
@@ -222,15 +259,22 @@ func EvalIfExpression(is *ast.IfExpression, scope *Item.Scope) Item.Item {
 	}
 }
 
-func EvalIdentifier(identifier *ast.Identifier, scope *Item.Scope) Item.Item {
-	val, ok := scope.Get(identifier.Value)
-	if !ok {
-		return newError("identifier not found: " + identifier.Value)
+func evalIdentifier(
+	node *ast.Identifier,
+	env *Item.Scope,
+) Item.Item {
+	if val, ok := env.Get(node.Value); ok {
+		return val
 	}
-	return val
+
+	if builtin, ok := builtins[node.Value]; ok {
+		return builtin
+	}
+
+	return newError("identifier not found: " + node.Value)
 }
 
-func EvalExpression(expressions []ast.Expression, scope *Item.Scope) []Item.Item {
+func evalExpression(expressions []ast.Expression, scope *Item.Scope) []Item.Item {
 	var res []Item.Item
 	for _, expression := range expressions {
 		eval := Eval(expression, scope)
@@ -241,15 +285,19 @@ func EvalExpression(expressions []ast.Expression, scope *Item.Scope) []Item.Item
 	}
 	return res
 }
-func ApplyFunction(_function Item.Item, args []Item.Item) Item.Item {
-	function, ok := _function.(*Item.Function)
-	if !ok {
-		return newError("not a function: %s", _function.Type())
-	}
+func applyFunction(fn Item.Item, args []Item.Item) Item.Item {
+	switch fn := fn.(type) {
 
-	extendedScope := extendedScope(function, args)
-	eval := Eval(function.Body, extendedScope)
-	return UnrwapReturnValue(eval)
+	case *Item.Function:
+		extendedEnv := extendedScope(fn, args)
+		evaluated := Eval(fn.Body, extendedEnv)
+		return unwrapReturnValue(evaluated)
+	case *Item.Builtin:
+		return fn.Fn(args...)
+
+	default:
+		return newError("not a function: %s", fn.Type())
+	}
 }
 func extendedScope(function *Item.Function, args []Item.Item) *Item.Scope {
 	scope := Item.NewEnclosedScope(function.Scope)
@@ -258,7 +306,7 @@ func extendedScope(function *Item.Function, args []Item.Item) *Item.Scope {
 	}
 	return scope
 }
-func UnrwapReturnValue(item Item.Item) Item.Item {
+func unwrapReturnValue(item Item.Item) Item.Item {
 	if returnValue, ok := item.(*Item.ReturnValue); ok {
 		return returnValue.Value
 	}
@@ -273,4 +321,71 @@ func isError(item Item.Item) bool {
 		return item.Type() == Item.ERROR_ITEM
 	}
 	return false
+}
+
+func evalArrayIndexExpression(array, index Item.Item) Item.Item {
+	arrayObject := array.(*Item.Array)
+	idx := index.(*Item.Integer).Value
+	max := int64(len(arrayObject.Elements) - 1)
+
+	if idx < 0 || idx > max {
+		return NULL
+	}
+
+	return arrayObject.Elements[idx]
+}
+
+func evalMapLiteral(
+	node *ast.MapLiteral,
+	env *Item.Scope,
+) Item.Item {
+	pairs := make(map[Item.HashKey]Item.HashPair)
+
+	for keyNode, valueNode := range node.Pairs {
+		key := Eval(keyNode, env)
+		if isError(key) {
+			return key
+		}
+
+		hashKey, ok := key.(Item.Hashable)
+		if !ok {
+			return newError("unusable as hash key: %s", key.Type())
+		}
+
+		value := Eval(valueNode, env)
+		if isError(value) {
+			return value
+		}
+
+		hashed := hashKey.HashKey()
+		pairs[hashed] = Item.HashPair{Key: key, Value: value}
+	}
+
+	return &Item.Hash{Pairs: pairs}
+}
+
+func evalMapIndexExpression(hash, index Item.Item) Item.Item {
+	hashObject := hash.(*Item.Hash)
+
+	key, ok := index.(Item.Hashable)
+	if !ok {
+		return newError("unusable as hash key: %s", index.Type())
+	}
+
+	pair, ok := hashObject.Pairs[key.HashKey()]
+	if !ok {
+		return NULL
+	}
+
+	return pair.Value
+}
+func evalIndexExpression(left, index Item.Item) Item.Item {
+	switch {
+	case left.Type() == Item.ARRAY_ITEM && index.Type() == Item.INTEGER_ITEM:
+		return evalArrayIndexExpression(left, index)
+	case left.Type() == Item.HASH_ITEM:
+		return evalMapIndexExpression(left, index)
+	default:
+		return newError("index operator not supported: %s", left.Type())
+	}
 }

@@ -3,6 +3,7 @@ package Item
 import (
 	"bytes"
 	"fmt"
+	"hash/fnv"
 	"sg_interpreter/src/sg/ast"
 	"strings"
 )
@@ -15,13 +16,29 @@ type Item interface {
 }
 
 const (
-	NULL_ITEM         = "NULL"
-	ERROR_ITEM        = "ERROR"
-	INTEGER_ITEM      = "INTEGER"
-	BOOLEAN_ITEM      = "BOOLEAN"
+	NULL_ITEM    = "NULL"
+	ERROR_ITEM   = "ERROR"
+	INTEGER_ITEM = "INTEGER"
+	BOOLEAN_ITEM = "BOOLEAN"
+	STRING_ITEM  = "STRING"
+
 	FUNCTION_ITEM     = "FUNCTION"
 	RETURN_VALUE_ITEM = "RETURN_VALUE"
+
+	BUILTIN_ITEM = "BUILTIN"
+
+	ARRAY_ITEM = "ARRAY"
+	HASH_ITEM  = "HASH"
 )
+
+type HashKey struct {
+	Type  ItemType
+	Value uint64
+}
+
+type Hashable interface {
+	HashKey() HashKey
+}
 
 type Integer struct {
 	Value int64
@@ -33,6 +50,9 @@ func (integer *Integer) Type() ItemType {
 func (integer *Integer) Output() string {
 	return fmt.Sprintf("%d", integer.Value)
 }
+func (i *Integer) HashKey() HashKey {
+	return HashKey{Type: i.Type(), Value: uint64(i.Value)}
+}
 
 type Boolean struct {
 	Value bool
@@ -43,6 +63,15 @@ func (boolean *Boolean) Type() ItemType {
 }
 func (boolean *Boolean) Output() string {
 	return fmt.Sprintf("%t", boolean.Value)
+}
+func (b *Boolean) HashKey() HashKey {
+	var value uint64
+	if b.Value {
+		value = 1
+	} else {
+		value = 0
+	}
+	return HashKey{Type: b.Type(), Value: value}
 }
 
 type Null struct{}
@@ -98,5 +127,72 @@ func (function *Function) Output() string {
 	out.WriteString(") {\n")
 	out.WriteString(function.Body.String())
 	out.WriteString("\n}")
+	return out.String()
+}
+
+type String struct {
+	Value string
+}
+
+func (s *String) Type() ItemType { return STRING_ITEM }
+func (s *String) Output() string { return s.Value }
+func (s *String) HashKey() HashKey {
+	h := fnv.New64a()
+	h.Write([]byte(s.Value))
+	return HashKey{Type: s.Type(), Value: h.Sum64()}
+}
+
+type BuiltinFunction func(args ...Item) Item
+
+type Builtin struct {
+	Fn BuiltinFunction
+}
+
+func (b *Builtin) Type() ItemType { return BUILTIN_ITEM }
+func (b *Builtin) Output() string { return "builtin function" }
+
+type Array struct {
+	Elements []Item
+}
+
+func (ao *Array) Type() ItemType { return ARRAY_ITEM }
+func (ao *Array) Output() string {
+	var out bytes.Buffer
+
+	elements := []string{}
+	for _, e := range ao.Elements {
+		elements = append(elements, e.Output())
+	}
+
+	out.WriteString("[")
+	out.WriteString(strings.Join(elements, ", "))
+	out.WriteString("]")
+
+	return out.String()
+}
+
+type HashPair struct {
+	Key   Item
+	Value Item
+}
+
+type Hash struct {
+	Pairs map[HashKey]HashPair
+}
+
+func (h *Hash) Type() ItemType { return HASH_ITEM }
+func (h *Hash) Output() string {
+	var out bytes.Buffer
+
+	pairs := []string{}
+	for _, pair := range h.Pairs {
+		pairs = append(pairs, fmt.Sprintf("%s: %s",
+			pair.Key.Output(), pair.Value.Output()))
+	}
+
+	out.WriteString("{")
+	out.WriteString(strings.Join(pairs, ", "))
+	out.WriteString("}")
+
 	return out.String()
 }

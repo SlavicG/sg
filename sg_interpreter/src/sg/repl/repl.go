@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"os"
 	"sg_interpreter/src/sg/Item"
 	"sg_interpreter/src/sg/evaluator"
 	"sg_interpreter/src/sg/lexer"
@@ -18,30 +17,26 @@ func Start(in io.Reader, out io.Writer) {
 	env := Item.NewScope()
 	fmt.Printf(PROMPT)
 
-	if in == os.Stdin {
-
-	}
+	line := ""
 	for {
 		scanned := scanner.Scan()
+		line += scanner.Text()
 		if !scanned {
+			l := lexer.New(line)
+			p := parser.New(l)
+			program := p.ParseProgram()
+			if len(p.Errors()) != 0 {
+				printParserErrors(out, p.Errors())
+				continue
+			}
+
+			evaluated := evaluator.Eval(program, env)
+			if evaluated != nil {
+				//check stuff
+			}
 			return
 		}
 
-		line := scanner.Text()
-		l := lexer.New(line)
-		p := parser.New(l)
-
-		program := p.ParseProgram()
-		if len(p.Errors()) != 0 {
-			printParserErrors(out, p.Errors())
-			continue
-		}
-
-		evaluated := evaluator.Eval(program, env)
-		if evaluated != nil {
-			io.WriteString(out, evaluated.Output())
-			io.WriteString(out, "\n")
-		}
 	}
 }
 

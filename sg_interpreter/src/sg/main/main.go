@@ -8,7 +8,7 @@ import (
 
 func main() {
 	// Open the input file
-	file, err := os.Open("input.sg")
+	file, err := os.Open(`/Users/slavicg/work/StarGust/sg/sg_interpreter/src/sg/main/input.sg`)
 	if err != nil {
 		fmt.Println("Error opening file:", err)
 		return
@@ -17,5 +17,5 @@ func main() {
 
 	// Start the REPL, reading from the file and writing to stdout
 	//file or os.Stdin
-	repl.Start(os.Stdin, os.Stdout)
+	repl.Start(file, os.Stdout)
 }

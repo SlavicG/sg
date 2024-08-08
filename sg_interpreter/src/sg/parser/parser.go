@@ -71,7 +71,7 @@ func New(lexer *lexer.Lexer) *Parser {
 	parser.registerPrefix(token.STRING, parser.parseStringLiteral)
 	parser.registerPrefix(token.TRUE, parser.parseBoolean)
 	parser.registerPrefix(token.FALSE, parser.parseBoolean)
-	
+
 	parser.registerPrefix(token.EXC, parser.parsePrefixExpression)
 	parser.registerPrefix(token.MINUS, parser.parsePrefixExpression)
 	parser.registerPrefix(token.LP, parser.parseGroupedExpressions)
@@ -162,8 +162,8 @@ func (parser *Parser) noPrefixParseFnError(t token.TokenType) {
 	msg := fmt.Sprintf("no prefix parse function for %s found", t)
 	parser.errors = append(parser.errors, msg)
 }
-func (p *Parser) parseStringLiteral() ast.Expression {
-	return &ast.StringLiteral{Token: p.curToken, Value: p.curToken.Literal}
+func (parser *Parser) parseStringLiteral() ast.Expression {
+	return &ast.StringLiteral{Token: parser.curToken, Value: parser.curToken.Literal}
 }
 func (parser *Parser) parseBoolean() ast.Expression {
 	return &ast.Boolean{Token: parser.curToken, Value: parser.CurTokenIsType(token.TRUE)}
@@ -357,7 +357,7 @@ func (parser *Parser) parseFunctionLiteral() ast.Expression {
 }
 
 func (parser *Parser) parseFunctionParameters() []*ast.Identifier {
-	identifiers := []*ast.Identifier{}
+	var identifiers []*ast.Identifier
 
 	if parser.PeekTokenIsType(token.RP) {
 		parser.nextToken()
@@ -387,7 +387,7 @@ func (parser *Parser) parseCallExpression(function ast.Expression) ast.Expressio
 }
 
 func (parser *Parser) parseExpressionList(delimiter token.TokenType) []ast.Expression {
-	ls := []ast.Expression{}
+	var ls []ast.Expression
 
 	if parser.PeekTokenIsType(delimiter) {
 		parser.nextToken()
@@ -410,9 +410,9 @@ func (parser *Parser) parseExpressionList(delimiter token.TokenType) []ast.Expre
 	return ls
 }
 
-func (p *Parser) parseArrayLiteral() ast.Expression {
-	array := &ast.ArrayLiteral{Token: p.curToken}
-	array.Elements = p.parseExpressionList(token.RBP)
+func (parser *Parser) parseArrayLiteral() ast.Expression {
+	array := &ast.ArrayLiteral{Token: parser.curToken}
+	array.Elements = parser.parseExpressionList(token.RBP)
 	return array
 }
 func (parser *Parser) parseIndexExpression(left ast.Expression) ast.Expression {

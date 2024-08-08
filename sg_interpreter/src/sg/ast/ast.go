@@ -57,13 +57,13 @@ type SetStatement struct {
 
 func (setStatement *SetStatement) statementNode()       {}
 func (setStatement *SetStatement) TokenLiteral() string { return setStatement.Token.Literal }
-func (SetStatement *SetStatement) String() string {
+func (setStatement *SetStatement) String() string {
 	var output bytes.Buffer
-	output.WriteString(SetStatement.TokenLiteral() + " ")
-	output.WriteString(SetStatement.Id.String())
+	output.WriteString(setStatement.TokenLiteral() + " ")
+	output.WriteString(setStatement.Id.String())
 	output.WriteString(" = ")
-	if SetStatement.Val != nil {
-		output.WriteString(SetStatement.Val.String())
+	if setStatement.Val != nil {
+		output.WriteString(setStatement.Val.String())
 	}
 	output.WriteString(";")
 	return output.String()
@@ -223,7 +223,7 @@ func (functionLiteral *FunctionLiteral) expressionNode()      {}
 func (functionLiteral *FunctionLiteral) TokenLiteral() string { return functionLiteral.Token.Literal }
 func (functionLiteral *FunctionLiteral) String() string {
 	var output bytes.Buffer
-	params := []string{}
+	var params []string
 	for _, p := range functionLiteral.Parameters {
 		params = append(params, p.String())
 	}
@@ -245,7 +245,7 @@ func (callExpression *CallExpression) expressionNode()      {}
 func (callExpression *CallExpression) TokenLiteral() string { return callExpression.Token.Literal }
 func (callExpression *CallExpression) String() string {
 	var out bytes.Buffer
-	args := []string{}
+	var args []string
 	for _, a := range callExpression.Arguments {
 		args = append(args, a.String())
 	}
@@ -274,7 +274,7 @@ func (arrayLiteral *ArrayLiteral) expressionNode()      {}
 func (arrayLiteral *ArrayLiteral) TokenLiteral() string { return arrayLiteral.Token.Literal }
 func (arrayLiteral *ArrayLiteral) String() string {
 	var output bytes.Buffer
-	elements := []string{}
+	var elements []string
 	for _, e := range arrayLiteral.Elements {
 		elements = append(elements, e.String())
 	}
@@ -311,7 +311,7 @@ func (mapLiteral *MapLiteral) expressionNode()      {}
 func (mapLiteral *MapLiteral) TokenLiteral() string { return mapLiteral.Token.Literal }
 func (mapLiteral *MapLiteral) String() string {
 	var out bytes.Buffer
-	pairs := []string{}
+	var pairs []string
 	for key, value := range mapLiteral.Pairs {
 		pairs = append(pairs, key.String()+":"+value.String())
 	}

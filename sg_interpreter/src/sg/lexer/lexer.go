@@ -148,7 +148,7 @@ func isLetter(ch byte) bool {
 }
 
 func isDigit(ch byte) bool {
-	return (ch >= '0' && ch <= '9')
+	return ch >= '0' && ch <= '9'
 }
 
 func newToken(tokenType token.TokenType, ch byte) token.Token {

@@ -1,2 +1,14 @@
-let identity = fun(x) {x + 5}
-identity(3)
+let f = fun(x) {
+    x + 5
+}
+let bruh = fun(a) {
+    ret a * 2;
+}
+puts(f(1) + bruh(2))
+puts("hello world!", len("hello world!"))
+let a = [1, 2, 4]
+puts(first(a), last(a), len(a))
+puts(a)
+a = push(a, 10)
+puts(first(a), last(a), len(a))
+puts(a)
