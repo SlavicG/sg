@@ -38,6 +38,7 @@ const (
 	FALSE    = "FALSE"
 	IF       = "IF"
 	ELSE     = "ELSE"
+	FOR      = "FOR"
 	RETURN   = "RETURN"
 
 	//Miscellanios types
@@ -62,6 +63,7 @@ var keywords = map[string]TokenType{
 	"else":     ELSE,
 	"return":   RETURN,
 	"ret":      RETURN,
+	"for":      FOR,
 }
 
 func FindIdent(ident string) TokenType {

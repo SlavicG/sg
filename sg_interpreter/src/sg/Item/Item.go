@@ -153,6 +153,8 @@ func (b *Builtin) Output() string { return "builtin function" }
 
 type Array struct {
 	Elements []Item
+	Capacity int64
+	Len      int64
 }
 
 func (ao *Array) Type() ItemType { return ARRAY_ITEM }
@@ -160,8 +162,9 @@ func (ao *Array) Output() string {
 	var out bytes.Buffer
 
 	elements := []string{}
-	for _, e := range ao.Elements {
-		elements = append(elements, e.Output())
+
+	for i := int64(0); i < ao.Len; i++ {
+		elements = append(elements, ao.Elements[i].Output())
 	}
 
 	out.WriteString("[")

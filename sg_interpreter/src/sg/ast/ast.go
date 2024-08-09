@@ -321,3 +321,32 @@ func (mapLiteral *MapLiteral) String() string {
 
 	return out.String()
 }
+
+type ForStatement struct {
+	Token       token.Token
+	Initializer Statement
+	Condition   Expression
+	Post        Statement
+	Body        *BlockStatement
+}
+
+func (fs *ForStatement) statementNode()       {}
+func (fs *ForStatement) TokenLiteral() string { return "for" }
+func (fs *ForStatement) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("for ")
+	if fs.Initializer != nil {
+		out.WriteString(fs.Initializer.String())
+	}
+	out.WriteString("; ")
+	out.WriteString(fs.Condition.String())
+	out.WriteString("; ")
+	if fs.Post != nil {
+		out.WriteString(fs.Post.String())
+	}
+	out.WriteString(" ")
+	out.WriteString(fs.Body.String())
+
+	return out.String()
+}

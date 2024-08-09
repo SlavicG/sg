@@ -70,6 +70,8 @@ func Eval(node ast.Node, scope *Item.Scope) Item.Item {
 		return evalInfixExpression(left, node.Operator, right)
 	case *ast.IfExpression:
 		return evalIfExpression(node, scope)
+	case *ast.ForStatement:
+		return evalForStatement(node, scope)
 	case *ast.Identifier:
 		return evalIdentifier(node, scope)
 	case *ast.FunctionLiteral:
@@ -91,8 +93,7 @@ func Eval(node ast.Node, scope *Item.Scope) Item.Item {
 		if len(elements) == 1 && isError(elements[0]) {
 			return elements[0]
 		}
-		return &Item.Array{Elements: elements}
-
+		return &Item.Array{Elements: elements, Len: int64(len(elements)), Capacity: int64(len(elements))}
 	case *ast.IndexExpression:
 		left := Eval(node.Left, scope)
 		if isError(left) {
@@ -388,4 +389,41 @@ func evalIndexExpression(left, index Item.Item) Item.Item {
 	default:
 		return newError("index operator not supported: %s", left.Type())
 	}
+}
+func evalForStatement(fs *ast.ForStatement, scope *Item.Scope) Item.Item {
+	// Execute the initializer in the current scope
+	if fs.Initializer != nil {
+		initialization := Eval(fs.Initializer, scope)
+		if isError(initialization) {
+			return initialization
+		}
+	}
+
+	var result Item.Item = NULL
+
+	for {
+		iterationScope := Item.NewEnclosedScope(scope)
+
+		condition := Eval(fs.Condition, iterationScope)
+		if isError(condition) {
+			return condition
+		}
+		if !trueLike(condition) {
+			break
+		}
+
+		result = Eval(fs.Body, iterationScope)
+		if isError(result) {
+			return result
+		}
+
+		if fs.Post != nil {
+			post := Eval(fs.Post, scope)
+			if isError(post) {
+				return post
+			}
+		}
+	}
+
+	return result
 }

@@ -9,6 +9,24 @@ puts("hello world!", len("hello world!"))
 let a = [1, 2, 4]
 puts(first(a), last(a), len(a))
 puts(a)
-a = push(a, 10)
-puts(first(a), last(a), len(a))
+puts(len(a), last(a))
+push(a, 10)
+puts(len(a), last(a))
+puts(a[0], a[1], a[2], a[3])
+set(a, 2, 5)
+puts(a[0], a[1], a[2], a[3])
 puts(a)
+shuffle(a)
+puts(a)
+sort(a)
+puts(a)
+reverse(a)
+puts(a)
+for (let i = 0; i < 10; i = i + 1) {
+    for(let j = 0; j < 2; j = j + 1) {
+        puts(i, j)
+    }
+}
+
+let y = {"abc": 13, "xyz": 12}
+puts(y)

@@ -66,7 +66,6 @@ func New(lexer *lexer.Lexer) *Parser {
 
 	//Registering the respective functions to tokens
 	parser.registerPrefix(token.IDENT, parser.parseIdentifier)
-
 	parser.registerPrefix(token.INT, parser.parseIntegerLiteral)
 	parser.registerPrefix(token.STRING, parser.parseStringLiteral)
 	parser.registerPrefix(token.TRUE, parser.parseBoolean)
@@ -190,6 +189,8 @@ func (parser *Parser) parseStatement() ast.Statement {
 		return parser.parseLetStatement()
 	case token.RETURN:
 		return parser.parseReturnStatement()
+	case token.FOR:
+		return parser.parseForStatement()
 	default:
 		return parser.parseExpressionStatement()
 	}
@@ -447,4 +448,44 @@ func (parser *Parser) parseMapLiteral() ast.Expression {
 		return nil
 	}
 	return mp
+}
+func (parser *Parser) parseForStatement() ast.Statement {
+	statement := &ast.ForStatement{Token: parser.curToken}
+
+	if !parser.ExpectPeek(token.LP) {
+		return nil
+	}
+	parser.nextToken()
+
+	// Parse the initializer
+	if parser.CurTokenIsType(token.LET) && parser.peekToken.Type == token.IDENT {
+		statement.Initializer = parser.parseLetStatement() // Adjust based on how initialization is handled
+	} else {
+		parser.noPrefixParseFnError(parser.curToken.Type)
+		return nil
+	}
+	parser.nextToken() // Move past the initializer
+
+	// Parse the condition
+	statement.Condition = parser.parseExpression(LOWEST)
+	if !parser.ExpectPeek(token.SEMICOL) {
+		return nil
+	}
+	parser.nextToken()
+
+	// Parse the post statement
+	if parser.CurTokenIsType(token.IDENT) && parser.peekToken.Type == token.SET {
+		statement.Post = parser.parseSetStatement() // Adjust based on how post statement is handled
+	} else {
+		parser.noPrefixParseFnError(parser.curToken.Type)
+		return nil
+	}
+
+	// Parse the body of the loop
+	parser.nextToken()
+	if !parser.ExpectPeek(token.LB) {
+		return nil
+	}
+	statement.Body = parser.parseBlockStatement()
+	return statement
 }
