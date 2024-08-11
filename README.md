@@ -1,6 +1,6 @@
 # SG (StarGust) Programming Language
 
-This is a very simple programming language I made for learning purposes. 
+This is a quite minimalistic programming language I made for learning purposes. 
 
 #### Credits
 I learned a lot and was inspired from the Books by Thorsten Ball - "Writing an Interpreter in GO" and "Writing a Compiler in GO".
@@ -209,3 +209,141 @@ sort(arr)
 ```
 
 Takes an array as argument. It sorts the array increasingly (currently only works for integers as strings don't have a comparator as of now). It works with a time complexity $O(n \cdot log(n))$ average-case using quick-sort behind it. 
+
+***
+
+## Examples:
+
+Here I will add some programs to share how the programming language works.
+
+### Greatest common divisor function
+
+```
+let gcd = fun(x, y) {
+    if(x == 0) {
+        return y
+    }
+    if(y == 0) {
+        return x
+    }
+    if(x > y) {
+        return gcd(x - y, y)
+    } else {
+        return gcd(x, y - x)
+    }
+}
+
+puts(gcd(10, 5), gcd(12, 16), gcd(14, 21))
+```
+Running this program we will receive an output of
+```
+5 4 7
+```
+
+### Fibonacci Sequence
+
+```
+let fib = [1, 1]
+for(let i = 2; i < 30; i = i + 1) {
+    let val = fib[len(fib) - 2] + last(fib)
+    push(fib, val)
+}
+puts(fib)
+```
+This program computes and outputs the first $30$ fibonacci numbers in linear-time. Here is the output produced to the console.
+```
+[1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 4181, 6765, 10946, 17711, 28657, 46368, 75025, 121393, 196418, 317811, 514229, 832040]
+```
+***
+### Edit Distance
+
+Consider the program below
+```
+let s = "LOVE"
+let t = "MOVIE"
+let n = len(s)
+let m = len(t)
+let dp = [[0]]
+let inf = 10000000
+for(let x = 0; x < m + 2; x = x + 1) {
+    push(dp[0], inf)
+}
+for(let ii = 1; ii < n + 2; ii = ii + 1) {
+    push(dp, [inf])
+    for(let jj = 1; jj < m + 2; jj = jj + 1) {
+        push(dp[ii], inf)
+    }
+}
+let min = fun(a, b) {
+    if(a < b) {
+        return a;
+    }
+    b
+}
+for(let i = 0; i < n + 1; i = i + 1) {
+    for(let j = 0; j < m + 1; j = j + 1) {
+        if(i > 0) {
+            if(j > 0) {
+                let add = 0
+                if(get(s, i - 1) != get(t, j - 1)) {
+                    add = 1
+                }
+                let val = min(dp[i][j], dp[i - 1][j - 1] + add)
+                set(dp[i], j, val)
+            }
+            let vall = min(dp[i][j], dp[i - 1][j] + 1)
+            set(dp[i], j, vall)
+        }
+        if(j > 0) {
+            let valll = min(dp[i][j], dp[i][j - 1] + 1)
+            set(dp[i], j, valll)
+        }
+    }
+}
+puts(dp[n][m])
+```
+
+Our language can even solve quite complex dynamic programming problems! For example, this code, can solve the classic [Edit Distance](https://en.wikipedia.org/wiki/Edit_distance#:~:text=In%20computational%20linguistics%20and%20computer,one%20string%20into%20the%20other.) problem in $O(n \cdot m)$ time complexity, where $n$ and $m$ are the lengths of the strings $s$ and $t$ respectively.
+
+Our program outputs
+```
+2
+```
+in this case, which is correct.
+***
+
+### Maximum Subarray Sum
+
+The following code solves the classic [Maximum Subarray Sum problem](https://en.wikipedia.org/wiki/Maximum_subarray_problem) in $O(n)$ time and memory complexity where $n$ is the length of the array.
+
+```
+let arr = [-1, 3, -2, 5, 3, -5, 2, 2]
+let s = [0]
+let ans = [0]
+for(let i = 0; i < len(arr); i = i + 1) {
+    set(s, 0, s[0] + arr[i])
+    if(s[0] < 0) {
+        set(s, 0, 0)
+    }
+    if(ans[0] < s[0]) {
+        set(ans, 0, s[0])
+    }
+}
+puts(ans[0])
+```
+
+The program will output:
+
+```
+9
+```
+Which is the correct answer for the given test case.
+Note, that we use arrays here, because they ensure a correct scope. Unfortunately, the scopes are a bit chaotic when using for-loops currently. This will be fixed eventually.
+
+*** 
+#### Future Improvements TO DO List.
+
+- Fix Loop Scopes
+- Add character Data Types
+- Add bitwise operators
+- Add console input option
