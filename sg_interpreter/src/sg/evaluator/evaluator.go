@@ -155,7 +155,7 @@ func evalInfixExpression(left Item.Item, op string, right Item.Item) Item.Item {
 	case left.Type() == Item.INTEGER_ITEM && right.Type() == Item.INTEGER_ITEM:
 		return evalIntegerInfixExpr(left, op, right)
 	case left.Type() == Item.STRING_ITEM && right.Type() == Item.STRING_ITEM:
-		return evalStringInfixExpression(op, left, right)
+		return evalStringInfixExpression(left, op, right)
 	case op == "==":
 		return boolToBoolean(left == right)
 	case op == "!=":
@@ -214,18 +214,24 @@ func evalIntegerInfixExpr(left Item.Item, op string, right Item.Item) Item.Item 
 	}
 	return newError("unknown operator: %s %s %s", left.Type(), op, right.Type())
 }
-func evalStringInfixExpression(
-	operator string,
-	left, right Item.Item,
-) Item.Item {
-	if operator != "+" {
-		return newError("unknown operator: %s %s %s",
-			left.Type(), operator, right.Type())
-	}
-
+func evalStringInfixExpression(left Item.Item, op string, right Item.Item) Item.Item {
 	leftVal := left.(*Item.String).Value
 	rightVal := right.(*Item.String).Value
-	return &Item.String{Value: leftVal + rightVal}
+
+	switch op {
+	case "+":
+		return &Item.String{Value: leftVal + rightVal}
+	case "==":
+		return boolToBoolean(leftVal == rightVal)
+	case "!=":
+		return boolToBoolean(leftVal != rightVal)
+	case "<":
+		return boolToBoolean(leftVal < rightVal)
+	case ">":
+		return boolToBoolean(leftVal > rightVal)
+	}
+
+	return newError("unknown operator: %s %s %s", left.Type(), op, right.Type())
 }
 func boolToBoolean(b bool) *Item.Boolean {
 	if b {

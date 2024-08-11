@@ -124,6 +124,28 @@ var builtins = map[string]*Item.Builtin{
 			return arr
 		},
 	},
+	"get": {
+		Fn: func(args ...Item.Item) Item.Item {
+			if len(args) != 2 {
+				return newError("Wrong number of arguments! Expected=2. Received=%d.", len(args))
+			}
+			if args[0].Type() != Item.STRING_ITEM {
+				return newError("Argument to `get` must be STRING. Expected %s", args[0].Type())
+			}
+			s := args[0].(*Item.String)
+			index, ok := args[1].(*Item.Integer)
+
+			if !ok {
+				return newError("Argument to `get` must be an INTEGER. Received %s", args[1].Type())
+			}
+			idx := index.Value
+			if idx < 0 || idx >= int64(len(s.Value)) {
+				return newError("Index Argument is out of bounds!")
+			} else {
+				return &Item.String{Value: string(s.Value[idx])} // Correctly slicing the string
+			}
+		},
+	},
 	"shuffle": {Fn: func(args ...Item.Item) Item.Item {
 		if len(args) != 1 {
 			return newError("Wrong number of arguments! Expected = 1. Received=%d",

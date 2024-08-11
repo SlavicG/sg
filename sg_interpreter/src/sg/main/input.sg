@@ -1,32 +1,13 @@
-let f = fun(x) {
-    x + 5
-}
-let bruh = fun(a) {
-    ret a * 2;
-}
-puts(f(1) + bruh(2))
-puts("hello world!", len("hello world!"))
-let a = [1, 2, 4]
-puts(first(a), last(a), len(a))
-puts(a)
-puts(len(a), last(a))
-push(a, 10)
-puts(len(a), last(a))
-puts(a[0], a[1], a[2], a[3])
-set(a, 2, 5)
-puts(a[0], a[1], a[2], a[3])
-puts(a)
-shuffle(a)
-puts(a)
-sort(a)
-puts(a)
-reverse(a)
-puts(a)
-for (let i = 0; i < 10; i = i + 1) {
-    for(let j = 0; j < 2; j = j + 1) {
-        puts(i, j)
+let arr = [-1, 3, -2, 5, 3, -5, 2, 2]
+let s = [0]
+let ans = [0]
+for(let i = 0; i < len(arr); i = i + 1) {
+    set(s, 0, s[0] + arr[i])
+    if(s[0] < 0) {
+        set(s, 0, 0)
+    }
+    if(ans[0] < s[0]) {
+        set(ans, 0, s[0])
     }
 }
-
-let y = {"abc": 13, "xyz": 12}
-puts(y)
+puts(ans[0])
