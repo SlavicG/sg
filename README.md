@@ -1,4 +1,4 @@
-# SG (StarGust) Programming Language
+# SG Programming Language
 
 This is a quite minimalistic programming language I made for learning purposes. 
 
