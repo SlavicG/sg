@@ -397,9 +397,13 @@ func evalIndexExpression(left, index Item.Item) Item.Item {
 	}
 }
 func evalForStatement(fs *ast.ForStatement, scope *Item.Scope) Item.Item {
-	// Execute the initializer in the current scope
+	// Create a dedicated scope for the entire for loop
+	// This ensures the initializer variable is accessible throughout the loop
+	loopScope := Item.NewEnclosedScope(scope)
+
+	// Execute the initializer in the loop scope
 	if fs.Initializer != nil {
-		initialization := Eval(fs.Initializer, scope)
+		initialization := Eval(fs.Initializer, loopScope)
 		if isError(initialization) {
 			return initialization
 		}
@@ -408,9 +412,9 @@ func evalForStatement(fs *ast.ForStatement, scope *Item.Scope) Item.Item {
 	var result Item.Item = NULL
 
 	for {
-		iterationScope := Item.NewEnclosedScope(scope)
-
-		condition := Eval(fs.Condition, iterationScope)
+		// Evaluate the condition in the loop scope
+		// (no need for a separate iteration scope for condition)
+		condition := Eval(fs.Condition, loopScope)
 		if isError(condition) {
 			return condition
 		}
@@ -418,13 +422,16 @@ func evalForStatement(fs *ast.ForStatement, scope *Item.Scope) Item.Item {
 			break
 		}
 
-		result = Eval(fs.Body, iterationScope)
+		// Execute the body in the loop scope
+		// This allows the body to access and modify loop variables
+		result = Eval(fs.Body, loopScope)
 		if isError(result) {
 			return result
 		}
 
+		// Execute the post statement in the loop scope
 		if fs.Post != nil {
-			post := Eval(fs.Post, scope)
+			post := Eval(fs.Post, loopScope)
 			if isError(post) {
 				return post
 			}

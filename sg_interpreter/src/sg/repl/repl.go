@@ -41,7 +41,7 @@ func Start(in io.Reader, out io.Writer) {
 }
 
 const ERROR_MESSAGE = `
-VLADISLAV FOUND BUG
+SG Parser Error
 `
 
 func printParserErrors(out io.Writer, errors []string) {
