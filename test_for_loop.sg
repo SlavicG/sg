@@ -1,0 +1,28 @@
+// Test 1: Simple for loop with counter
+puts("Test 1: Simple counter")
+for(let i = 0; i < 5; i = i + 1) {
+    puts(i)
+}
+
+// Test 2: Nested for loops
+puts("Test 2: Nested loops")
+for(let i = 1; i <= 3; i = i + 1) {
+    for(let j = 1; j <= 3; j = j + 1) {
+        puts(i, j)
+    }
+}
+
+// Test 3: For loop with variable declared before
+puts("Test 3: Variable modification inside loop")
+let sum = 0
+for(let i = 1; i <= 5; i = i + 1) {
+    sum = sum + i
+}
+puts("Sum:", sum)
+
+// Test 4: For loop accessing outer scope
+puts("Test 4: Outer scope access")
+let multiplier = 2
+for(let i = 1; i <= 3; i = i + 1) {
+    puts(i * multiplier)
+}

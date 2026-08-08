@@ -1,0 +1,17 @@
+// Test return statement inside loop
+let testReturn = fun() {
+    puts("Starting search...")
+    for(let i = 0; i < 10; i = i + 1) {
+        puts("Checking i =", i)
+        if(i == 3) {
+            puts("Found it!")
+            return i
+        }
+    }
+    puts("This should not print if return works")
+    return -1
+}
+
+let result = testReturn()
+puts("Result:", result)
+puts("Expected: 3")
