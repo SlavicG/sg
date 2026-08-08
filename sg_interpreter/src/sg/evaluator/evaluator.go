@@ -428,6 +428,10 @@ func evalForStatement(fs *ast.ForStatement, scope *Item.Scope) Item.Item {
 		if isError(result) {
 			return result
 		}
+		// If a return statement is encountered, break the loop and propagate it
+		if result != nil && result.Type() == Item.RETURN_VALUE_ITEM {
+			return result
+		}
 
 		// Execute the post statement in the loop scope
 		if fs.Post != nil {
